@@ -23,7 +23,7 @@ public class TestManejoMateriales {
 
 
         //4. DELETE: para eliminar (Borrar un registro existente)
-       MaterialDAO.delete(new Material(4));
+       //MaterialDAO.delete(new Material(4));
 
     }
 }
