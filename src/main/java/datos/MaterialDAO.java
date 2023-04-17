@@ -7,14 +7,21 @@ import java.util.*;
 
 public class MaterialDAO {
 
+    /* Variable para poder recibir una conexion desde afuera de esta clase
+    Se usa para que la conexion no se cierre cada vez que se termina una Query. En vez de ello,
+    queda abierta y se maneja desde afuera de la clase. Esa clase externa va a decidir cuando se hace commit o
+    rollback de toda la transaccion. */
+    private final Connection conexionTransaction;
+
     private static final String SQL_SELECT = "SELECT id_material, nombre, precio_placa_900x600, precio_placa_comercial FROM material";
     private static final String SQL_INSERT = "INSERT INTO material(nombre, precio_placa_900x600, precio_placa_comercial) VALUES (?, ?, ?)";
-
     private static final String SQL_UPDATE = "UPDATE material SET nombre = ?, precio_placa_900x600 = ?, precio_placa_comercial = ? WHERE id_material = ?";
-
     private static final String SQL_DELETE = "DELETE FROM material WHERE id_material = ?";
 
-    public List<Material> select() {
+    public MaterialDAO(Connection conexionTransaction) {
+        this.conexionTransaction = conexionTransaction;
+    }
+    public List<Material> select() throws SQLException{
 
         Connection conn = null;
         PreparedStatement ps = null;
@@ -23,7 +30,7 @@ public class MaterialDAO {
         List<Material> materiales = new ArrayList<Material>();
 
         try {
-            conn = getConnection();
+            conn = this.conexionTransaction != null ? this.conexionTransaction : Conexion.getConnection();
             ps = conn.prepareStatement(SQL_SELECT);
             rs = ps.executeQuery();
             System.out.println("Ejecutando Query..." + SQL_SELECT);
@@ -37,27 +44,23 @@ public class MaterialDAO {
                 material = new Material(idMaterial, nombre, precioPlaca_900x600, precioPlaca_Comercial);
                 materiales.add(material);
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         } finally {
-            try {
                 close(rs);
                 close(ps);
-                close(conn);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+                if(this.conexionTransaction==null){
+                    close(conn);
+                }
         }
         return materiales;
     }
 
-    public static int insert(Material material) {
+    public int insert(Material material) throws SQLException{
         Connection conn = null;
         PreparedStatement ps = null;
         int rows = 0;
 
         try {
-            conn = getConnection();
+            conn = this.conexionTransaction != null ? this.conexionTransaction : Conexion.getConnection();
             ps = conn.prepareStatement(SQL_INSERT);
             ps.setString(1, material.getNombre());
             ps.setDouble(2, material.getPrecioPlaca_900x600());
@@ -67,26 +70,22 @@ public class MaterialDAO {
             rows = ps.executeUpdate();
             System.out.println("Registros afectados: " + rows);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
         } finally {
-            try {
                 close(ps);
-                close(conn);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+                if(this.conexionTransaction==null){
+                    close(conn);
+                }
         }
         return rows;
     }
 
-    public static int update(Material material) {
+    public int update(Material material) throws SQLException{
         Connection conn = null;
         PreparedStatement ps = null;
         int rows = 0;
 
         try {
-            conn = getConnection();
+            conn = this.conexionTransaction != null ? this.conexionTransaction : Conexion.getConnection();
             ps = conn.prepareStatement(SQL_UPDATE);
             ps.setString(1, material.getNombre());
             ps.setDouble(2, material.getPrecioPlaca_900x600());
@@ -97,41 +96,31 @@ public class MaterialDAO {
             rows = ps.executeUpdate();
             System.out.println("Registros actualizados: " + rows);
 
-        } catch (SQLException e) {
-            e.printStackTrace();
         } finally {
-            try {
                 close(ps);
-                close(conn);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+                if(this.conexionTransaction==null){
+                    close(conn);
+                }
         }
         return rows;
     }
 
-    public static int delete(Material material) {
+    public int delete(Material material) throws SQLException{
         Connection conn = null;
         PreparedStatement ps = null;
         int rows = 0;
 
         try {
-            conn = getConnection();
+            conn = this.conexionTransaction != null ? this.conexionTransaction : Conexion.getConnection();
             ps = conn.prepareStatement(SQL_DELETE);
             ps.setInt(1, material.getIdMaterial());
             rows = ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
         } finally {
-            try {
                 close(ps);
-                close(conn);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+                if(this.conexionTransaction == null){
+                    close(conn);
+                }
         }
         return rows;
-
     }
-
 }
